@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 Next.js + Prisma + NextAuth
 
-## Getting Started
+This project is a modern full-stack starter built with **Next.js (App Router)**, **Prisma ORM**, **NextAuth.js**, and **PostgreSQL**.  
+It includes authentication (login/signup), email support, and is production-ready for deployment on **Vercel**, **Neon**, or **Railway**.
 
-First, run the development server:
+---
+
+## 🧰 Tech Stack
+
+- **Next.js 14+ (App Router)**
+- **Prisma ORM** for database management
+- **NextAuth.js** for authentication
+- **PostgreSQL** (or SQLite for local dev)
+- **TypeScript**
+- **Shadcn/UI** for styled components
+- **dotenv** for environment variables
+
+---
+
+## ⚙️ Environment Setup
+
+1. Create a `.env` file in the project root:
+
+   ```bash
+   touch .env
+   ```
+
+2. Add the following environment variables:
+
+```env
+DATABASE_URL="postgresql://<username>:<password>@localhost:5432/<dbname>?schema=public"
+
+NEXTAUTH_SECRET="generate-a-random-secret"
+NEXTAUTH_URL="http://localhost:3000"
+
+EMAIL_SERVER_USER="your-email@example.com"
+EMAIL_SERVER_PASSWORD="your-password"
+EMAIL_SERVER_HOST="smtp.gmail.com"
+EMAIL_SERVER_PORT=587
+EMAIL_FROM="your-email@example.com"
+```
+
+##💡 You can generate a strong secret with:
+
+```bash
+openssl rand -base64 32
+```
+
+## 🗄️ Prisma Setup
+
+1. Run initial migration
+
+```bash
+npm run db:migrate:init
+```
+
+2. View your database
+
+### 1️⃣ Start Prisma development server
+
+```bash
+npx prisma studio
+```
+
+3. (Optional) Reset database
+
+```bash
+npx prisma migrate reset
+```
+
+### Prisma can manage a local Postgres instance for development and automatically sync schema changes.
+
+Run:
+
+```bash
+npx prisma dev
+```
+
+---
+
+## Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Authentication
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Authentication handled by NextAuth.js
+- Supports Credentials (email/password)
+- You can extend it with OAuth (Google, GitHub) by editing src/app/api/auth/[...nextauth]/route.ts
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Next.js Documentation
+- Prisma Documentation
+- NextAuth Documentation
