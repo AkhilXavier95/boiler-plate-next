@@ -1,12 +1,8 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// This is your Prisma schema file
+// Docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -15,11 +11,31 @@ datasource db {
 }
 
 model User {
-  id             String   @id @default(cuid())
-  name           String?
-  email          String   @unique
-  password       String
-  emailVerified  DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                String    @id @default(cuid())
+  name              String?
+  email             String    @unique
+  password          String
+  emailVerified     DateTime?
+  verificationToken String?   @unique
+  resetToken        String?   @unique
+  resetTokenExpiry  DateTime?
+  role              Role      @default(USER)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sessions          Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  USER
+  ADMIN
 }
