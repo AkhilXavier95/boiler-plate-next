@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:migrate:init": "prisma migrate dev --name init --config prisma.config.ts",
+    "db:migrate": "prisma migrate dev --config prisma.config.ts",
+    "db:deploy": "prisma migrate deploy --config prisma.config.ts",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -14,6 +18,7 @@
     "@shadcn/ui": "^0.0.4",
     "autoprefixer": "^10.4.21",
     "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
     "next": "16.0.1",
     "next-auth": "^4.24.13",
     "nodemailer": "^7.0.10",
