@@ -1,7 +1,8 @@
-import NextAuth, { AuthOptions } from "next-auth";
+import NextAuth, { AuthOptions, User } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import { compare } from "bcrypt";
+import { JWT } from "next-auth/jwt";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -31,7 +32,7 @@ export const authOptions: AuthOptions = {
           id: user.id,
           name: user.name,
           email: user.email
-        };
+        } satisfies User;
       }
     })
   ],
@@ -46,7 +47,7 @@ export const authOptions: AuthOptions = {
   },
 
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user }): Promise<JWT> {
       if (user) {
         token.id = user.id;
         token.email = user.email;
@@ -55,11 +56,9 @@ export const authOptions: AuthOptions = {
     },
 
     async session({ session, token }) {
-      if (token) {
-        session.user = {
-          id: token.id,
-          email: token.email
-        } as any;
+      if (session.user && token) {
+        session.user.id = token.id as string;
+        session.user.email = token.email as string;
       }
       return session;
     }

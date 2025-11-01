@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { EmailOptions } from "@/types/email";
 
 const transport =
   process.env.NODE_ENV === "production"
@@ -12,7 +13,7 @@ const transport =
       })
     : null;
 
-export async function sendEmail({ to, subject, html, text }: any) {
+export async function sendEmail({ to, subject, html, text }: EmailOptions) {
   const from = process.env.FROM_EMAIL || "dev@example.com";
 
   if (process.env.NODE_ENV !== "production") {
