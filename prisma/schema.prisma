@@ -11,19 +11,20 @@ datasource db {
 }
 
 model User {
-  id                String    @id @default(cuid())
-  name              String?
-  email             String    @unique
-  password          String
-  emailVerified     DateTime?
-  verificationToken String?   @unique
-  resetToken        String?   @unique
-  resetTokenExpiry  DateTime?
-  role              Role      @default(USER)
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id                     String    @id @default(cuid())
+  name                   String?
+  email                  String    @unique
+  password               String
+  emailVerified          DateTime?
+  verificationToken      String?   @unique
+  verificationTokenExpiry DateTime?
+  resetToken             String?   @unique
+  resetTokenExpiry       DateTime?
+  role                   Role      @default(USER)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
-  sessions          Session[]
+  sessions Session[]
 }
 
 model Session {
