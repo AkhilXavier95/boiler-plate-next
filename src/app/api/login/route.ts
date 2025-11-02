@@ -35,12 +35,12 @@ async function loginHandler(request: Request) {
     }
 
     // Check if email is verified
-    if (!user.emailVerified) {
-      return NextResponse.json(
-        { error: "Please verify your email before logging in" },
-        { status: 403 }
-      );
-    }
+    // if (!user.emailVerified) {
+    //   return NextResponse.json(
+    //     { error: "Please verify your email before logging in" },
+    //     { status: 403 }
+    //   );
+    // }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {

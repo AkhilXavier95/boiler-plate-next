@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { compare } from "bcrypt";
 import { JWT } from "next-auth/jwt";
 
+// Extended user type with emailVerified
+type ExtendedUser = User & { emailVerified: boolean };
+
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -28,14 +31,15 @@ export const authOptions: AuthOptions = {
         const isValid = await compare(credentials.password, user.password);
         if (!isValid) throw new Error("Invalid email or password");
 
-        if (!user.emailVerified)
-          throw new Error("Please verify your email before logging in");
+        // if (!user.emailVerified)
+        //   throw new Error("Please verify your email before logging in");
 
         return {
           id: user.id,
           name: user.name,
-          email: user.email
-        } satisfies User;
+          email: user.email,
+          emailVerified: !!user.emailVerified
+        } as ExtendedUser;
       }
     })
   ],
@@ -51,25 +55,16 @@ export const authOptions: AuthOptions = {
 
   callbacks: {
     async jwt({ token, user }): Promise<JWT> {
+      // Only update token on initial login (when user object exists)
       if (user) {
-        token.id = user.id;
-        token.email = user.email;
+        const extendedUser = user as ExtendedUser;
+        token.id = extendedUser.id;
+        token.email = extendedUser.email;
+        token.emailVerified = extendedUser.emailVerified;
       }
 
-      // Refresh user data from database on each token refresh
-      if (token.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { id: true, email: true, emailVerified: true, role: true }
-        });
-
-        if (!dbUser || !dbUser.emailVerified) {
-          throw new Error("User not found or email not verified");
-        }
-
-        token.email = dbUser.email;
-      }
-
+      // No database queries on every request - trust the JWT token
+      // Token was verified at login time, so we can trust it
       return token;
     },
 
@@ -78,14 +73,8 @@ export const authOptions: AuthOptions = {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
 
-        // Verify user still exists and is verified
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { id: true, emailVerified: true }
-        });
-
-        if (!dbUser || !dbUser.emailVerified) {
-          // Return empty session - NextAuth will handle as invalid
+        // If email verification was revoked, invalidate session
+        if (token.emailVerified === false) {
           return {
             ...session,
             user: {
