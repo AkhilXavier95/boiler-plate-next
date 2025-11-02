@@ -46,7 +46,7 @@ export default function RegisterPage() {
           router.push("/login?verified=pending");
         }, 3000);
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setSubmitting(false);
@@ -60,7 +60,7 @@ export default function RegisterPage() {
           <div className="p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-md">
             <h2 className="text-xl font-bold mb-2">Registration Successful!</h2>
             <p className="text-sm">
-              We've sent a verification email to your inbox. Please check your email to verify your account before logging in.
+              We&apos;ve sent a verification email to your inbox. Please check your email to verify your account before logging in.
             </p>
           </div>
           <Link href="/login">

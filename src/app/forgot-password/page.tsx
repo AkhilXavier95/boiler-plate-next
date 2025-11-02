@@ -36,7 +36,7 @@ export default function ForgotPasswordPage() {
       } else {
         setSuccess(true);
       }
-    } catch (err) {
+    } catch {
       setError("An unexpected error occurred. Please try again.");
     } finally {
       setSubmitting(false);
@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
           <div className="p-4 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 rounded-md">
             <h2 className="text-xl font-bold mb-2">Check your email</h2>
             <p className="text-sm">
-              If that email exists in our system, we've sent a password reset link.
+              If that email exists in our system, we&apos;ve sent a password reset link.
             </p>
           </div>
           <Link href="/login">
@@ -69,7 +69,7 @@ export default function ForgotPasswordPage() {
             Forgot password
           </h2>
           <p className="mt-2 text-center text-sm text-zinc-600 dark:text-zinc-400">
-            Enter your email and we'll send you a reset link
+            Enter your email and we&apos;ll send you a reset link
           </p>
         </div>
 

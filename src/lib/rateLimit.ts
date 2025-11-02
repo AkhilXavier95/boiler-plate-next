@@ -41,12 +41,15 @@ function getScopedKey(request: Request, scope: string): string {
   return `${scope}:${identifier}`;
 }
 
+// Extend globalThis type to include our cleanup interval
+declare global {
+  // eslint-disable-next-line no-var
+  var __rateLimitCleanup: NodeJS.Timeout | undefined;
+}
+
 // Cleanup old entries periodically (every 5 minutes)
-if (
-  typeof globalThis !== "undefined" &&
-  !(globalThis as any).__rateLimitCleanup
-) {
-  (globalThis as any).__rateLimitCleanup = setInterval(
+if (typeof globalThis !== "undefined" && !globalThis.__rateLimitCleanup) {
+  globalThis.__rateLimitCleanup = setInterval(
     () => {
       const now = Date.now();
       for (const [key, timestamps] of tokenMap.entries()) {
