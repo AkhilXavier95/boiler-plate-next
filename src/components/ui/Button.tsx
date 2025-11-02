@@ -1,11 +1,11 @@
-import React from "react";
+import React, { memo } from "react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "outline";
   isLoading?: boolean;
 }
 
-export function Button({
+function ButtonComponent({
   children,
   variant = "primary",
   isLoading = false,
@@ -31,4 +31,7 @@ export function Button({
     </button>
   );
 }
+
+// Memoize Button to prevent unnecessary re-renders
+export const Button = memo(ButtonComponent);
 

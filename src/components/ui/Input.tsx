@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { useField } from "formik";
 
 interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "name"> {
@@ -7,7 +7,7 @@ interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "
   name?: string; // Required when used with Formik
 }
 
-export function Input({ 
+function InputComponent({ 
   label, 
   error,
   name,
@@ -49,3 +49,6 @@ export function Input({
     </div>
   );
 }
+
+// Memoize Input to prevent unnecessary re-renders during form typing
+export const Input = memo(InputComponent);

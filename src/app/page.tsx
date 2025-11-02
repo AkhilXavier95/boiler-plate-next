@@ -24,10 +24,10 @@ export default async function Home() {
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
-          <Link href="/login">
+          <Link href="/login" prefetch={true}>
             <Button>Sign In</Button>
           </Link>
-          <Link href="/register">
+          <Link href="/register" prefetch={true}>
             <Button variant="outline">Create Account</Button>
           </Link>
         </div>

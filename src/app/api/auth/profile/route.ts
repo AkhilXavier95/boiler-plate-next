@@ -33,7 +33,13 @@ async function getProfileHandler() {
       );
     }
 
-    return NextResponse.json({ user }, { status: 200 });
+    // Cache profile data for 60 seconds to reduce database load
+    return NextResponse.json({ user }, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'private, max-age=60, stale-while-revalidate=120'
+      }
+    });
   } catch (error) {
     console.error("Get profile error:", error);
     return NextResponse.json(
