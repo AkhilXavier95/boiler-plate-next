@@ -8,8 +8,14 @@ const globalForPrisma = globalThis as unknown as {
 export const prisma =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: ["query", "info", "warn", "error"]
+    // Only log queries in development to reduce overhead in production
+    log: process.env.NODE_ENV === "development" 
+      ? ["query", "info", "warn", "error"]
+      : ["warn", "error"]
   });
+
+// Prisma connection pooling is configured via DATABASE_URL query parameters
+// connection_limit=10&pool_timeout=20 are set in docker-compose.yml
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 

@@ -25,8 +25,8 @@ export const authOptions: AuthOptions = {
         const isValid = await compare(credentials.password, user.password);
         if (!isValid) throw new Error("Invalid email or password");
 
-        if (!user.emailVerified)
-          throw new Error("Please verify your email before logging in");
+        // if (!user.emailVerified)
+        //   throw new Error("Please verify your email before logging in");
 
         return {
           id: user.id,
