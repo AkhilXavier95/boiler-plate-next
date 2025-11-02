@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { compare } from "bcrypt";
 import { JWT } from "next-auth/jwt";
 
+// Extended user type with emailVerified
+type ExtendedUser = User & { emailVerified: boolean };
+
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -36,7 +39,7 @@ export const authOptions: AuthOptions = {
           name: user.name,
           email: user.email,
           emailVerified: !!user.emailVerified
-        } as User & { emailVerified: boolean };
+        } as ExtendedUser;
       }
     })
   ],
@@ -54,9 +57,10 @@ export const authOptions: AuthOptions = {
     async jwt({ token, user }): Promise<JWT> {
       // Only update token on initial login (when user object exists)
       if (user) {
-        token.id = user.id;
-        token.email = user.email;
-        token.emailVerified = (user as any).emailVerified;
+        const extendedUser = user as ExtendedUser;
+        token.id = extendedUser.id;
+        token.email = extendedUser.email;
+        token.emailVerified = extendedUser.emailVerified;
       }
 
       // No database queries on every request - trust the JWT token
