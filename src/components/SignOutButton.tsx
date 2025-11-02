@@ -1,12 +1,13 @@
 "use client";
 
+import { memo, useCallback } from "react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
 
-export function SignOutButton() {
-  const handleSignOut = async () => {
+function SignOutButtonComponent() {
+  const handleSignOut = useCallback(async () => {
     await signOut({ callbackUrl: "/login" });
-  };
+  }, []);
 
   return (
     <Button variant="outline" onClick={handleSignOut}>
@@ -14,4 +15,7 @@ export function SignOutButton() {
     </Button>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const SignOutButton = memo(SignOutButtonComponent);
 

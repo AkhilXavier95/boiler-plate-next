@@ -47,7 +47,6 @@ function LoginFormContent() {
         setError(result.error);
       } else if (result?.ok) {
         router.push("/dashboard");
-        router.refresh();
       }
     } catch {
       setError("An unexpected error occurred. Please try again.");
@@ -67,6 +66,7 @@ function LoginFormContent() {
             Or{" "}
             <Link
               href="/register"
+              prefetch={true}
               className="font-medium text-foreground hover:underline"
             >
               create a new account
@@ -111,6 +111,7 @@ function LoginFormContent() {
                 <div className="text-sm">
                   <Link
                     href="/forgot-password"
+                    prefetch={true}
                     className="font-medium text-foreground hover:underline"
                   >
                     Forgot password?
