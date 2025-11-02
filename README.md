@@ -1,36 +1,458 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🚀 Next.js + Prisma + NextAuth
 
-## Getting Started
+This project is a modern full-stack starter built with **Next.js (App Router)**, **Prisma ORM**, **NextAuth.js**, and **PostgreSQL**.  
+It includes authentication (login/signup), email support, and is production-ready for deployment on **Vercel**, **Neon**, or **Railway**.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🧰 Tech Stack
+
+- **Next.js 14+ (App Router)**
+- **Prisma ORM** for database management
+- **NextAuth.js** for authentication
+- **PostgreSQL** (or SQLite for local dev)
+- **TypeScript**
+- **Shadcn/UI** for styled components
+- **dotenv** for environment variables
+
+---
+
+## ⚙️ Environment Setup
+
+### For Local Development (without Docker)
+
+1. Create a `.env` file in the project root:
+
+   ```bash
+   touch .env
+   ```
+
+2. Add the following environment variables:
+
+```env
+# Database (local PostgreSQL)
+DATABASE_URL="postgresql://<username>:<password>@localhost:5432/<dbname>?schema=public"
+
+# NextAuth (Required)
+NEXTAUTH_SECRET="generate-a-random-secret"
+NEXTAUTH_URL="http://localhost:3000"
+
+# Session (Optional - for iron-session if needed)
+SESSION_SECRET="generate-a-random-secret"
+
+# Email Configuration (Required for production, optional for development)
+# Development uses Ethereal Email automatically
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@example.com"
+SMTP_PASS="your-app-password"
+FROM_EMAIL="your-email@example.com"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### For Docker Development/Production
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+See the [Docker Setup](#-docker-setup) section below for Docker-specific environment variables.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Generate a Strong Secret
 
-## Learn More
+```bash
+openssl rand -base64 32
+```
 
-To learn more about Next.js, take a look at the following resources:
+Copy the output and use it as your `NEXTAUTH_SECRET`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🗄️ Prisma Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Local Development (without Docker)
 
-## Deploy on Vercel
+1. **Run initial migration:**
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+npm run db:migrate:init
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+2. **View your database with Prisma Studio:**
+
+```bash
+npm run db:studio
+# Opens at http://localhost:5555
+```
+
+3. **Create new migration:**
+
+```bash
+npm run db:migrate
+```
+
+4. **Deploy migrations (production):**
+
+```bash
+npm run db:deploy
+```
+
+5. **Reset database (⚠️ deletes all data):**
+
+```bash
+npx prisma migrate reset
+```
+
+6. **Generate Prisma Client:**
+
+```bash
+npx prisma generate --no-engine
+```
+
+### Docker + Prisma Setup
+
+When using Docker, Prisma is automatically configured:
+
+- ✅ **Prisma Client** is generated during Docker build
+- ✅ **Schema sync** runs automatically on container startup:
+  - **Development mode**: Uses `prisma db push` (fast schema sync, no migration files)
+  - **Production mode**: Uses `prisma migrate deploy` (applies migration files)
+- ✅ **Prisma CLI** is available in containers for manual operations
+
+**Prisma commands in Docker:**
+
+#### Development Docker (`docker-compose.dev.yml`):
+
+```bash
+# Start development (auto-syncs schema via db push)
+npm run docker:dev
+
+# Create migration file (optional)
+docker compose -f docker-compose.dev.yml exec app npx prisma migrate dev --name <migration_name> --config prisma.config.ts
+
+# Generate Prisma Client (after schema changes)
+docker compose -f docker-compose.dev.yml exec app npx prisma generate --no-engine
+
+# Access Prisma Studio (database GUI)
+docker compose -f docker-compose.dev.yml exec app npx prisma studio --browser none --hostname 0.0.0.0
+# Then visit http://localhost:5555
+# Note: Port 5555 must be exposed in docker-compose.dev.yml
+
+# Seed database
+docker compose -f docker-compose.dev.yml exec app npm run seed
+```
+
+#### Production Docker (`docker-compose.yml`):
+
+```bash
+# Start production (migrations run automatically on startup)
+npm run docker:build
+npm run docker:up
+
+# Run migrations manually
+docker compose exec app npx prisma migrate deploy --config prisma.config.ts
+
+# Generate Prisma Client
+docker compose exec app npx prisma generate --no-engine
+
+# Access Prisma Studio
+docker compose exec app npx prisma studio --browser none --hostname 0.0.0.0
+# Access at http://localhost:5555
+
+# View database directly via psql
+docker compose exec postgres psql -U postgres -d boundri_db
+
+# Reset database (⚠️ deletes all data)
+docker compose exec app npx prisma migrate reset
+```
+
+**Note:** 
+- Development mode uses `prisma db push` which auto-syncs schema changes without migration files
+- Production mode uses `prisma migrate deploy` which applies migration files automatically on startup
+- See `MIGRATION_DOCKER.md` for detailed migration instructions
+
+---
+
+## 🐳 Docker Setup
+
+### Prerequisites
+
+1. **Install Docker Desktop** (if not already installed)
+
+   - Download from [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
+   - Make sure Docker Desktop is running before using Docker commands
+
+2. **Create `.env` file** with environment variables:
+
+```env
+# Database (used by Docker Compose)
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=boundri_db
+POSTGRES_PORT=51214
+
+# Application
+APP_PORT=3000
+# Note: DATABASE_URL uses port 5432 (internal container port) and 'postgres' (service name)
+# For connections from host machine, use localhost:51214
+DATABASE_URL=postgresql://postgres:postgres@postgres:5432/boundri_db?schema=public
+
+# NextAuth (Required)
+NEXTAUTH_SECRET=your-secret-key-here-generate-with-openssl-rand-base64-32
+NEXTAUTH_URL=http://localhost:3000
+
+# Session (Optional - for iron-session if needed)
+SESSION_SECRET=your-session-secret-key-here
+
+# Email Configuration (Required for production, optional for development)
+# Development uses Ethereal Email automatically
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@example.com
+SMTP_PASS=your-app-password
+FROM_EMAIL=your-email@example.com
+```
+
+### Quick Start
+
+#### Development Mode (with hot-reload)
+
+```bash
+# Start development environment
+npm run docker:dev
+
+# Or manually:
+docker compose -f docker-compose.dev.yml up
+```
+
+This will:
+
+- Start PostgreSQL database
+- Start Next.js app with hot-reload
+- Access app at `http://localhost:3000`
+
+#### Production Mode
+
+```bash
+# Build and start containers
+npm run docker:build
+npm run docker:up
+
+# View logs
+npm run docker:logs
+
+# Stop containers
+npm run docker:down
+```
+
+### Docker Commands Reference
+
+| Command                    | Description                                |
+| -------------------------- | ------------------------------------------ |
+| `npm run docker:build`     | Build production Docker images             |
+| `npm run docker:up`        | Start production containers in background  |
+| `npm run docker:down`      | Stop and remove containers                 |
+| `npm run docker:dev`       | Start development environment (foreground) |
+| `npm run docker:dev:build` | Build development images                   |
+| `npm run docker:logs`      | View application logs                      |
+
+### Manual Docker Commands
+
+```bash
+# Build images
+docker compose build
+
+# Start services
+docker compose up -d
+
+# View logs
+docker compose logs -f app
+
+# Stop services
+docker compose down
+
+# Stop and remove volumes (⚠️ deletes database data)
+docker compose down -v
+
+# Access database directly
+docker compose exec postgres psql -U postgres -d boundri_db
+
+# Run migrations manually
+docker compose exec app npx prisma migrate deploy --config prisma.config.ts
+
+# Generate Prisma Client
+docker compose exec app npx prisma generate --no-engine
+
+# Access app container shell
+docker compose exec app sh
+
+# Prisma Studio (database GUI)
+docker compose exec app npx prisma studio --browser none --hostname 0.0.0.0
+# Access at http://localhost:5555
+```
+
+### Development Workflow
+
+1. **Start Docker services:**
+
+   ```bash
+   npm run docker:dev
+   ```
+
+   This will automatically:
+
+   - Generate Prisma Client
+   - Push schema changes to database (`prisma db push`)
+   - Start the Next.js dev server
+
+2. **Manual migrations (if you prefer using migration files):**
+
+   ```bash
+   # Create a new migration
+   docker compose exec app npm run db:migrate
+
+   # Note: Development mode uses `db push` automatically (fast schema sync)
+   # Production mode uses `migrate deploy` (applies migration files)
+   ```
+
+3. **Seed database (optional):**
+
+   ```bash
+   docker compose exec app npm run seed
+   ```
+
+4. **Access Prisma Studio (database GUI):**
+
+   ```bash
+   docker compose exec app npx prisma studio
+   # Then open http://localhost:5555 in your browser
+   ```
+
+5. **Make schema changes:**
+
+   ```bash
+   # After editing prisma/schema.prisma
+   docker compose exec app npm run db:migrate
+   docker compose exec app npx prisma generate --no-engine
+   ```
+
+### Troubleshooting
+
+**Docker daemon not running:**
+
+```bash
+# Start Docker Desktop manually or:
+open -a Docker
+```
+
+**Port already in use:**
+
+- Change `APP_PORT` or `POSTGRES_PORT` in `.env` file
+
+**Database connection errors:**
+
+- Ensure PostgreSQL container is healthy: `docker compose ps`
+- Check database URL in `.env` matches Docker service name
+
+**Rebuild everything:**
+
+```bash
+docker compose down -v  # Remove containers and volumes
+docker compose build --no-cache  # Rebuild without cache
+docker compose up -d
+```
+
+**View container status:**
+
+```bash
+docker compose ps
+```
+
+**View container logs:**
+
+```bash
+docker compose logs -f  # All services
+docker compose logs -f app  # Just the app
+docker compose logs -f postgres  # Just the database
+```
+
+---
+
+## 🚀 Development
+
+### Local Development (without Docker)
+
+```bash
+# Install dependencies
+npm install
+
+# Run database migrations
+npm run db:migrate
+
+# Start development server
+npm run dev
+
+# Access Prisma Studio
+npm run db:studio
+```
+
+The app will be available at `http://localhost:3000`
+
+### Docker Development
+
+See the [Docker Setup](#-docker-setup) section for Docker-based development.
+
+## 🔐 Authentication
+
+- **Authentication handled by NextAuth.js**
+- Supports **Credentials** (email/password)
+- **Session management** via Prisma (stored in database)
+- **Rate limiting** on all authentication endpoints to prevent brute force attacks
+- You can extend it with **OAuth** (Google, GitHub) by editing `src/app/api/auth/[...nextauth]/route.ts`
+
+### Rate Limiting
+
+The application includes rate limiting on sensitive endpoints:
+
+- **Login**: 5 attempts per 15 minutes per IP
+- **Registration**: 3 attempts per hour per IP
+- **Password Reset**: 3 requests per hour per IP
+- **Email Verification**: 10 attempts per 15 minutes per IP
+
+Rate limit information is returned in response headers:
+- `X-RateLimit-Limit`: Maximum number of requests allowed
+- `X-RateLimit-Remaining`: Number of requests remaining
+- `X-RateLimit-Reset`: Timestamp when the rate limit resets
+- `Retry-After`: Seconds until the rate limit resets (on 429 responses)
+
+**Note**: The current implementation uses in-memory rate limiting, which works for single-instance deployments. For multi-instance deployments (load balancers, serverless), consider using a Redis-based rate limiter.
+
+## 📝 Available Scripts
+
+| Script                    | Description                      |
+| ------------------------- | -------------------------------- |
+| `npm run dev`             | Start Next.js development server |
+| `npm run build`           | Build for production             |
+| `npm run start`           | Start production server          |
+| `npm run lint`            | Run ESLint                       |
+| `npm run db:migrate`      | Run Prisma migrations            |
+| `npm run db:migrate:init` | Initialize first migration       |
+| `npm run db:deploy`       | Deploy migrations (production)   |
+| `npm run db:studio`       | Open Prisma Studio               |
+| `npm run seed`            | Seed the database                |
+| `npm run docker:build`    | Build Docker images              |
+| `npm run docker:up`       | Start Docker containers          |
+| `npm run docker:down`     | Stop Docker containers           |
+| `npm run docker:dev`      | Start Docker development         |
+
+## 📚 Learn More
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Prisma Documentation](https://www.prisma.io/docs)
+- [NextAuth.js Documentation](https://next-auth.js.org)
+- [Docker Documentation](https://docs.docker.com)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is private and proprietary.
