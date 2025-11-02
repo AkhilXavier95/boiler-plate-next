@@ -14,8 +14,8 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60,
   },
   
-  // Optimize bundle size
-  swcMinify: true,
+  // Note: SWC minification is enabled by default in Next.js 16+
+  // No need to explicitly set swcMinify
   
   // Experimental features for performance
   experimental: {

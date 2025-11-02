@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { getServerSession } from "next-auth";
+import { getServerSession, type Session } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { SignOutButton } from "@/components/SignOutButton";
 
-function DashboardContent({ session }: { session: NonNullable<Awaited<ReturnType<typeof getServerSession>>> }) {
+function DashboardContent({ session }: { session: Session }) {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
