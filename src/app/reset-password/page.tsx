@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Formik, Form } from "formik";
 import { Input } from "@/components/ui/Input";
@@ -13,7 +13,7 @@ interface ResetPasswordForm {
   confirmPassword: string;
 }
 
-export default function ResetPasswordPage() {
+function ResetPasswordFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -160,6 +160,23 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black px-4">
+        <div className="w-full max-w-md space-y-8 bg-white dark:bg-zinc-900 p-8 rounded-lg shadow-lg">
+          <div className="animate-pulse">
+            <div className="h-8 bg-zinc-200 dark:bg-zinc-700 rounded mb-4"></div>
+            <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
+          </div>
+        </div>
+      </div>
+    }>
+      <ResetPasswordFormContent />
+    </Suspense>
   );
 }
 

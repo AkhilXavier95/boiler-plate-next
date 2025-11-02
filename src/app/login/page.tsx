@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Formik, Form } from "formik";
@@ -14,7 +14,7 @@ interface LoginForm {
   password: string;
 }
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,10 @@ export default function LoginPage() {
     }
   }, [searchParams]);
 
-  const handleSubmit = async (values: LoginForm, { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }) => {
+  const handleSubmit = async (
+    values: LoginForm,
+    { setSubmitting }: { setSubmitting: (isSubmitting: boolean) => void }
+  ) => {
     try {
       setError(null);
       const result = await signIn("credentials", {
@@ -115,11 +118,7 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button
-                type="submit"
-                isLoading={isSubmitting}
-                className="w-full"
-              >
+              <Button type="submit" isLoading={isSubmitting} className="w-full">
                 Sign in
               </Button>
             </Form>
@@ -130,3 +129,21 @@ export default function LoginPage() {
   );
 }
 
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black px-4">
+          <div className="w-full max-w-md space-y-8 bg-white dark:bg-zinc-900 p-8 rounded-lg shadow-lg">
+            <div className="animate-pulse">
+              <div className="h-8 bg-zinc-200 dark:bg-zinc-700 rounded mb-4"></div>
+              <div className="h-4 bg-zinc-200 dark:bg-zinc-700 rounded"></div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <LoginFormContent />
+    </Suspense>
+  );
+}

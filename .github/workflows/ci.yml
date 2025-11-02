@@ -12,11 +12,11 @@ jobs:
 
     services:
       postgres:
-        image: postgres:14
+        image: postgres:16-alpine
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: mydb
+          POSTGRES_DB: boundri_db
         ports:
           - 5432:5432
         options: >-
@@ -26,7 +26,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/mydb?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/boundri_db?schema=public
       NEXTAUTH_SECRET: testsecret
       NEXTAUTH_URL: http://localhost:3000
       EMAIL_SERVER_HOST: smtp.example.com
@@ -48,10 +48,10 @@ jobs:
         run: npm ci
 
       - name: 🧱 Generate Prisma client
-        run: npx prisma generate
+        run: npx prisma generate --config prisma.config.ts
 
       - name: 🗃️ Run Prisma migrations
-        run: npx prisma migrate deploy
+        run: npx prisma migrate deploy --config prisma.config.ts
 
       - name: 🔍 Lint code
         run: npm run lint
@@ -61,3 +61,23 @@ jobs:
 
       - name: ✅ Run tests (if present)
         run: npm test || echo "⚠️ No tests found, skipping..."
+
+  docker-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛎️ Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🏗️ Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: boundri-app:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
