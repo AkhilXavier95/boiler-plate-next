@@ -33,16 +33,20 @@ It includes authentication (login/signup), email support, and is production-read
 # Database (local PostgreSQL)
 DATABASE_URL="postgresql://<username>:<password>@localhost:5432/<dbname>?schema=public"
 
-# NextAuth
+# NextAuth (Required)
 NEXTAUTH_SECRET="generate-a-random-secret"
 NEXTAUTH_URL="http://localhost:3000"
 
-# Email Configuration (optional)
-EMAIL_SERVER_USER="your-email@example.com"
-EMAIL_SERVER_PASSWORD="your-password"
-EMAIL_SERVER_HOST="smtp.gmail.com"
-EMAIL_SERVER_PORT=587
-EMAIL_FROM="your-email@example.com"
+# Session (Optional - for iron-session if needed)
+SESSION_SECRET="generate-a-random-secret"
+
+# Email Configuration (Required for production, optional for development)
+# Development uses Ethereal Email automatically
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_USER="your-email@example.com"
+SMTP_PASS="your-app-password"
+FROM_EMAIL="your-email@example.com"
 ```
 
 ### For Docker Development/Production
@@ -110,19 +114,43 @@ When using Docker, Prisma is automatically configured:
 
 **Prisma commands in Docker:**
 
+#### Development Docker (`docker-compose.dev.yml`):
+
 ```bash
-# Run migrations
-docker compose exec app npm run db:migrate
+# Start development (auto-syncs schema via db push)
+npm run docker:dev
+
+# Create migration file (optional)
+docker compose -f docker-compose.dev.yml exec app npx prisma migrate dev --name <migration_name> --config prisma.config.ts
 
 # Generate Prisma Client (after schema changes)
-docker compose exec app npx prisma generate --no-engine
+docker compose -f docker-compose.dev.yml exec app npx prisma generate --no-engine
 
 # Access Prisma Studio (database GUI)
-docker compose exec app npx prisma studio
+docker compose -f docker-compose.dev.yml exec app npx prisma studio --browser none --hostname 0.0.0.0
 # Then visit http://localhost:5555
+# Note: Port 5555 must be exposed in docker-compose.dev.yml
 
 # Seed database
-docker compose exec app npm run seed
+docker compose -f docker-compose.dev.yml exec app npm run seed
+```
+
+#### Production Docker (`docker-compose.yml`):
+
+```bash
+# Start production (migrations run automatically on startup)
+npm run docker:build
+npm run docker:up
+
+# Run migrations manually
+docker compose exec app npx prisma migrate deploy --config prisma.config.ts
+
+# Generate Prisma Client
+docker compose exec app npx prisma generate --no-engine
+
+# Access Prisma Studio
+docker compose exec app npx prisma studio --browser none --hostname 0.0.0.0
+# Access at http://localhost:5555
 
 # View database directly via psql
 docker compose exec postgres psql -U postgres -d boundri_db
@@ -131,7 +159,10 @@ docker compose exec postgres psql -U postgres -d boundri_db
 docker compose exec app npx prisma migrate reset
 ```
 
-**Note:** In production mode (`docker-compose.yml`), migrations run automatically when the app container starts.
+**Note:** 
+- Development mode uses `prisma db push` which auto-syncs schema changes without migration files
+- Production mode uses `prisma migrate deploy` which applies migration files automatically on startup
+- See `MIGRATION_DOCKER.md` for detailed migration instructions
 
 ---
 
@@ -159,15 +190,20 @@ APP_PORT=3000
 # For connections from host machine, use localhost:51214
 DATABASE_URL=postgresql://postgres:postgres@postgres:5432/boundri_db?schema=public
 
-# NextAuth
+# NextAuth (Required)
 NEXTAUTH_SECRET=your-secret-key-here-generate-with-openssl-rand-base64-32
 NEXTAUTH_URL=http://localhost:3000
 
-# Email Configuration (optional)
-# EMAIL_HOST=smtp.example.com
-# EMAIL_PORT=587
-# EMAIL_USER=your-email@example.com
-# EMAIL_PASSWORD=your-password
+# Session (Optional - for iron-session if needed)
+SESSION_SECRET=your-session-secret-key-here
+
+# Email Configuration (Required for production, optional for development)
+# Development uses Ethereal Email automatically
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@example.com
+SMTP_PASS=your-app-password
+FROM_EMAIL=your-email@example.com
 ```
 
 ### Quick Start
@@ -244,7 +280,7 @@ docker compose exec app npx prisma generate --no-engine
 docker compose exec app sh
 
 # Prisma Studio (database GUI)
-docker compose exec app npx prisma studio
+docker compose exec app npx prisma studio --browser none --hostname 0.0.0.0
 # Access at http://localhost:5555
 ```
 
@@ -364,7 +400,25 @@ See the [Docker Setup](#-docker-setup) section for Docker-based development.
 - **Authentication handled by NextAuth.js**
 - Supports **Credentials** (email/password)
 - **Session management** via Prisma (stored in database)
+- **Rate limiting** on all authentication endpoints to prevent brute force attacks
 - You can extend it with **OAuth** (Google, GitHub) by editing `src/app/api/auth/[...nextauth]/route.ts`
+
+### Rate Limiting
+
+The application includes rate limiting on sensitive endpoints:
+
+- **Login**: 5 attempts per 15 minutes per IP
+- **Registration**: 3 attempts per hour per IP
+- **Password Reset**: 3 requests per hour per IP
+- **Email Verification**: 10 attempts per 15 minutes per IP
+
+Rate limit information is returned in response headers:
+- `X-RateLimit-Limit`: Maximum number of requests allowed
+- `X-RateLimit-Remaining`: Number of requests remaining
+- `X-RateLimit-Reset`: Timestamp when the rate limit resets
+- `Retry-After`: Seconds until the rate limit resets (on 429 responses)
+
+**Note**: The current implementation uses in-memory rate limiting, which works for single-instance deployments. For multi-instance deployments (load balancers, serverless), consider using a Redis-based rate limiter.
 
 ## 📝 Available Scripts
 
