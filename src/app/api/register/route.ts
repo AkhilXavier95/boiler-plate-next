@@ -3,16 +3,24 @@ import { prisma } from "@/lib/prisma";
 import { hash } from "bcrypt";
 import { randomBytes } from "crypto";
 import { sendEmail } from "@/lib/mailer";
+import { withRateLimit } from "@/lib/withRateLimit";
+import { rateLimiters } from "@/lib/rateLimit";
+import { registerSchema } from "@/lib/zodSchemas";
 
-export async function POST(req: Request) {
+async function registerHandler(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const body = await req.json();
 
-    if (!email || !password)
+    // Validate input
+    const validation = registerSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Missing email or password" },
+        { error: validation.error.issues[0].message },
         { status: 400 }
       );
+    }
+
+    const { name, email, password } = validation.data;
 
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser)
@@ -23,19 +31,21 @@ export async function POST(req: Request) {
 
     const hashedPassword = await hash(password, 10);
     const verificationToken = randomBytes(32).toString("hex");
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        verificationToken
+        verificationToken,
+        verificationTokenExpiry
       }
     });
 
     const verifyUrl = `${
       process.env.NEXTAUTH_URL
-    }/verify?token=${verificationToken}&email=${encodeURIComponent(email)}`;
+    }/api/verify?token=${verificationToken}&email=${encodeURIComponent(email)}`;
 
     await sendEmail({
       to: email,
@@ -44,7 +54,11 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json(
-      { ok: true, message: "User registered successfully" },
+      {
+        ok: true,
+        message:
+          "User registered successfully. Please check your email to verify your account."
+      },
       { status: 201 }
     );
   } catch (err) {
@@ -55,3 +69,8 @@ export async function POST(req: Request) {
     );
   }
 }
+
+export const POST = withRateLimit(registerHandler, {
+  limiter: rateLimiters.register,
+  errorMessage: "Too many registration attempts. Please try again in an hour."
+});
